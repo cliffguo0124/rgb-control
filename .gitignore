@@ -1,0 +1,6 @@
+# Python 暫存檔
+__pycache__/
+*.pyc
+
+# 執行時才產生的個人設定（每個人的顏色不同，不需要上傳）
+last_color.json
