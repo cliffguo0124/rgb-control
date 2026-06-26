@@ -65,8 +65,9 @@ class RGBApp(ctk.CTk):
     def __init__(self):
         super().__init__()
         self.client = None
-        # 讀回上次存的顏色與亮度（第一次跑就用預設值）
-        self.base_rgb, self.brightness = storage.load()
+        # 讀回上次存的顏色、亮度、關燈前的顏色（第一次跑就用預設值）
+        self.base_rgb, self.brightness, self.last_on = storage.load()
+        self.is_off = (self.base_rgb == (0, 0, 0))  # 目前是不是關燈狀態
 
         self.title("RGB 燈控")
         self.geometry("420x620")
@@ -142,12 +143,14 @@ class RGBApp(ctk.CTk):
             font=ctk.CTkFont("Microsoft JhengHei", 14),
             command=self.pick_color,
         ).pack(side="left", expand=True, fill="x", padx=(0, 6))
-        ctk.CTkButton(
+        self.power_btn = ctk.CTkButton(
             actions, text="⏻  關燈", width=110, height=44, corner_radius=14,
             fg_color="#2b2b30", hover_color="#5a2b2b",
             font=ctk.CTkFont("Microsoft JhengHei", 14),
-            command=self.turn_off,
-        ).pack(side="right")
+            command=self.toggle_power,
+        )
+        self.power_btn.pack(side="right")
+        self.update_power_button()  # 依照目前狀態顯示「關燈」或「開燈」
 
         # ---- 狀態列 ----
         self.status = ctk.CTkLabel(
@@ -216,22 +219,41 @@ class RGBApp(ctk.CTk):
 
     def choose(self, rgb):
         self.base_rgb = rgb
+        if rgb != (0, 0, 0):
+            self.last_on = rgb        # 記住這個「亮著」的顏色
+            self.is_off = False
+        self.update_power_button()
         self.refresh_preview()
         self.apply()
-        storage.save(self.base_rgb, self.brightness)
+        storage.save(self.base_rgb, self.brightness, self.last_on)
 
     def on_brightness(self, value):
         self.brightness = int(value)
         self.bright_value.configure(text=f"{self.brightness}%")
         self.refresh_preview()
         self.apply()
-        storage.save(self.base_rgb, self.brightness)
+        storage.save(self.base_rgb, self.brightness, self.last_on)
 
-    def turn_off(self):
-        self.base_rgb = (0, 0, 0)
+    def toggle_power(self):
+        """開關切換：關燈會先記住顏色，再按一次就恢復。"""
+        if self.is_off:
+            # 開燈：回到關燈前的顏色
+            self.base_rgb = self.last_on
+            self.is_off = False
+        else:
+            # 關燈：先記住現在的顏色，再變黑
+            if self.base_rgb != (0, 0, 0):
+                self.last_on = self.base_rgb
+            self.base_rgb = (0, 0, 0)
+            self.is_off = True
+        self.update_power_button()
         self.refresh_preview()
         self.apply()
-        storage.save(self.base_rgb, self.brightness)
+        storage.save(self.base_rgb, self.brightness, self.last_on)
+
+    def update_power_button(self):
+        """依照目前是開是關，切換按鈕文字。"""
+        self.power_btn.configure(text="💡  開燈" if self.is_off else "⏻  關燈")
 
     def pick_color(self):
         result = colorchooser.askcolor(title="選一個顏色")

@@ -45,7 +45,7 @@ def connect_with_retry():
 
 
 def main():
-    rgb, brightness = storage.load()
+    rgb, brightness, _last_on = storage.load()
     factor = brightness / 100
     r, g, b = (int(c * factor) for c in rgb)
 
