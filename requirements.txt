@@ -1,1 +1,4 @@
 openrgb-python>=0.3.6
+pywebview>=4.4
+customtkinter>=6.0
+pillow>=10.0

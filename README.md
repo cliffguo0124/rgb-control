@@ -1,10 +1,21 @@
 # 🌈 rgb-control
 
 我自己寫的電腦 RGB 燈控程式，用 Python + OpenRGB。
-有現代深色 GUI、亮度調整、記憶上次顏色、開機自動套用。
+有兩種圖形介面，都支援亮度調整、記憶上次顏色、開機自動套用。
+
+## ✨ LUMEN 介面（主要、推薦）
+用 pywebview（HTML/CSS）做的炫彩介面：
+- 毛玻璃質感、會呼吸的光球、環繞光暈動畫
+- 10 色快速色票 ＋ 無段色相滑桿
+- 亮度滑桿、開關切換
+- 即時連線狀態、顯示各燈區資訊
+
+```bash
+python app.py
+```
 
 ## 功能
-- 🎨 圖形介面一鍵變色（紅橘黃綠青藍靛紫粉白）＋ 自訂任意顏色
+- 🎨 一鍵變色（紅橘黃綠青藍靛紫粉白）＋ 自訂任意顏色
 - 💡 亮度滑桿
 - 💾 記住上次的顏色，下次打開自動套用
 - 🔌 自動偵測 OpenRGB，斷線會自己重連
@@ -14,9 +25,10 @@
 ## 檔案說明
 | 檔案 | 作用 |
 |------|------|
-| `rgb_gui.py` | 主程式：圖形介面 |
+| `app.py` + `index.html` | **LUMEN 主介面**（pywebview） |
+| `rgb_gui.py` | 簡易版介面（CustomTkinter） |
 | `apply_last.py` | 開機時自動套用上次顏色（不開視窗） |
-| `storage.py` | 負責記住 / 讀回上次的顏色 |
+| `storage.py` | 記住 / 讀回上次的顏色（三個介面共用） |
 | `set_color.py` | 指令版一鍵變色 |
 | `check_lights.py` | 列出 OpenRGB 偵測到的裝置 |
 | `inspect_zones.py` | 檢視各燈區的 LED 數量 |
@@ -30,7 +42,10 @@
 
 ## 怎麼用
 ```bash
-# 圖形介面（推薦）
+# LUMEN 炫彩介面（推薦）
+python app.py
+
+# 簡易介面
 python rgb_gui.py
 
 # 或用指令

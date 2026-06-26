@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LUMEN · RGB 燈控</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;height:100%;}
+  body{
+    background:#040406;color:#fff;overflow:hidden;
+    font-family:'Space Grotesk','Noto Sans TC',sans-serif;
+    display:flex;align-items:center;justify-content:center;height:100vh;
+    user-select:none;-webkit-user-select:none;
+  }
+  button{font-family:inherit;}
+  @keyframes breathe{0%,100%{transform:scale(0.9);opacity:0.5;}50%{transform:scale(1.18);opacity:0.95;}}
+  @keyframes orbFloat{0%,100%{transform:translateY(0);}50%{transform:translateY(-7px);}}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  @keyframes drift1{0%,100%{transform:translate(0,0) scale(1);}50%{transform:translate(70px,-50px) scale(1.18);}}
+  @keyframes drift2{0%,100%{transform:translate(0,0) scale(1);}50%{transform:translate(-60px,46px) scale(1.22);}}
+  @keyframes pulseDot{0%,100%{opacity:1;transform:scale(1);}50%{opacity:0.35;transform:scale(0.78);}}
+
+  .blob{position:absolute;border-radius:50%;transition:background-color .8s ease;}
+  .vignette{position:absolute;inset:0;pointer-events:none;
+    background:radial-gradient(circle at 50% 50%, rgba(0,0,0,0) 40%, rgba(0,0,0,0.55) 100%);}
+  .card{position:absolute;inset:0;z-index:2;padding:24px 44px 30px;border-radius:0;
+    background:rgba(18,18,24,0.34);backdrop-filter:blur(40px) saturate(180%);
+    -webkit-backdrop-filter:blur(40px) saturate(180%);
+    border:none;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,0.05);
+    display:flex;flex-direction:column;}
+  .header{display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;}
+  .brand{display:flex;align-items:center;gap:11px;-webkit-app-region:drag;}
+  .winbtn{width:32px;height:32px;display:flex;align-items:center;justify-content:center;
+    border:none;border-radius:8px;background:transparent;cursor:pointer;color:#c4c4cc;
+    transition:background-color .18s ease, color .18s ease;}
+  .winbtn:hover{background-color:rgba(255,255,255,0.09);}
+  .winbtn.close:hover{background-color:rgba(232,17,35,0.92);color:#fff;}
+  .swatch{position:relative;height:64px;border:none;border-radius:16px;cursor:pointer;
+    box-shadow:0 4px 14px rgba(0,0,0,0.3);transition:transform .25s ease, box-shadow .3s ease;}
+  .swatch:hover{transform:translateY(-3px) scale(1.05);}
+  .ring{position:absolute;inset:-4px;border-radius:19px;border:2px solid #fff;
+    box-shadow:0 0 18px rgba(255,255,255,0.45);display:none;}
+  .swatch.sel .ring{display:block;}
+  .label{font-size:11.5px;color:#83838c;letter-spacing:3px;text-transform:uppercase;font-weight:500;}
+  .mono{font-family:'JetBrains Mono','Noto Sans TC',monospace;}
+  .track{position:relative;height:18px;border-radius:100px;cursor:pointer;
+    box-shadow:inset 0 1px 3px rgba(0,0,0,0.35);}
+  .thumb{position:absolute;top:50%;width:24px;height:24px;border-radius:50%;
+    transform:translate(-50%,-50%);}
+  .chip{display:flex;align-items:center;justify-content:space-between;padding:12px 15px;
+    border-radius:14px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);
+    transition:box-shadow .6s ease;}
+  .powerbtn{margin-top:auto;display:flex;align-items:center;justify-content:center;gap:11px;
+    height:56px;border-radius:16px;color:#fff;cursor:pointer;font-size:14.5px;font-weight:500;
+    letter-spacing:1px;transition:background-color .3s ease, border-color .3s ease, box-shadow .3s ease;}
+</style>
+</head>
+<body>
+  <div class="blob" id="ambient1" style="width:620px;height:620px;top:-150px;left:-130px;filter:blur(64px);animation:drift1 17s ease-in-out infinite;"></div>
+  <div class="blob" id="ambient2" style="width:580px;height:580px;bottom:-170px;right:-140px;filter:blur(74px);animation:drift2 20s ease-in-out infinite;"></div>
+  <div class="vignette"></div>
+
+  <div class="card">
+    <div class="header">
+      <div class="brand pywebview-drag-region">
+        <div id="brandDot" style="width:13px;height:13px;border-radius:50%;transition:background-color .6s ease, box-shadow .6s ease;"></div>
+        <div>
+          <div style="font-size:16px;font-weight:600;letter-spacing:2.5px;">LUMEN</div>
+          <div style="font-size:10.5px;color:#83838c;letter-spacing:1.5px;margin-top:2px;white-space:nowrap;">RGB 燈光控制台</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:16px;">
+        <div style="display:flex;align-items:center;gap:9px;padding:8px 15px;border-radius:100px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);">
+          <div id="statusDot" style="width:7px;height:7px;border-radius:50%;animation:pulseDot 2s ease-in-out infinite;"></div>
+          <span id="statusText" class="mono" style="font-size:11.5px;color:#c4c4cc;letter-spacing:0.3px;white-space:nowrap;">連線中…</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:3px;">
+          <button class="winbtn" id="btnMin" aria-label="minimize"><div style="width:11px;height:1.5px;background:currentColor;border-radius:2px;"></div></button>
+          <button class="winbtn" id="btnMax" aria-label="maximize"><div style="width:10px;height:10px;border:1.5px solid currentColor;border-radius:2px;"></div></button>
+          <button class="winbtn close" id="btnClose" aria-label="close" style="font-size:15px;line-height:1;">✕</button>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:34px;align-items:center;flex:1;">
+      <div style="width:320px;display:flex;flex-direction:column;align-items:center;">
+        <div style="position:relative;width:300px;height:282px;display:flex;align-items:center;justify-content:center;">
+          <div id="glowDisc" style="position:absolute;width:290px;height:290px;border-radius:50%;filter:blur(34px);animation:breathe 4.6s ease-in-out infinite;transition:background-color .6s ease;"></div>
+          <div style="position:absolute;width:222px;height:222px;border-radius:50%;border:1px solid rgba(255,255,255,0.07);"></div>
+          <div style="position:absolute;width:238px;height:238px;animation:spin 15s linear infinite;">
+            <div id="ringDot" style="position:absolute;top:-3px;left:50%;width:9px;height:9px;border-radius:50%;transform:translateX(-50%);transition:background-color .6s ease;"></div>
+          </div>
+          <div id="orb" style="position:relative;width:182px;height:182px;border-radius:50%;animation:orbFloat 6s ease-in-out infinite;transition:background-color .6s ease, box-shadow .6s ease;overflow:hidden;">
+            <div style="position:absolute;inset:0;border-radius:50%;background:radial-gradient(circle at 32% 26%, rgba(255,255,255,0.5) 0%, rgba(255,255,255,0) 44%);"></div>
+            <div style="position:absolute;inset:0;border-radius:50%;background:radial-gradient(circle at 50% 88%, rgba(0,0,0,0.42) 0%, rgba(0,0,0,0) 52%);"></div>
+            <div style="position:absolute;inset:0;border-radius:50%;box-shadow:inset 0 2px 9px rgba(255,255,255,0.16);"></div>
+          </div>
+        </div>
+
+        <div id="hexText" class="mono" style="font-size:31px;font-weight:500;letter-spacing:1.5px;margin-top:4px;">#000000</div>
+        <div id="rgbText" class="mono" style="font-size:11.5px;color:#83838c;letter-spacing:2px;margin-top:9px;">R 0   G 0   B 0</div>
+
+        <div style="display:flex;flex-direction:column;gap:9px;width:100%;margin-top:26px;">
+          <div class="chip" id="chip1">
+            <div style="display:flex;align-items:center;gap:11px;">
+              <div id="chipDot1" style="width:9px;height:9px;border-radius:2px;transition:background-color .6s ease;"></div>
+              <span style="font-size:12.5px;color:#d2d2d8;">風扇 ＋ CPU 水冷頭</span>
+            </div>
+            <span class="mono" style="font-size:11px;color:#7a7a82;">40 LED</span>
+          </div>
+          <div class="chip" id="chip2">
+            <div style="display:flex;align-items:center;gap:11px;">
+              <div id="chipDot2" style="width:9px;height:9px;border-radius:2px;transition:background-color .6s ease;"></div>
+              <span style="font-size:12.5px;color:#d2d2d8;">水冷排</span>
+            </div>
+            <span class="mono" style="font-size:11px;color:#7a7a82;">100 LED</span>
+          </div>
+        </div>
+      </div>
+
+      <div style="flex:1;display:flex;flex-direction:column;gap:22px;">
+        <div>
+          <div style="margin-bottom:13px;"><span class="label">快速顏色</span></div>
+          <div id="palette" style="display:grid;grid-template-columns:repeat(5,1fr);gap:11px;"></div>
+        </div>
+
+        <div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+            <span class="label">自訂色相</span>
+            <span class="mono" style="font-size:11px;color:#6f6f78;">拖曳調整</span>
+          </div>
+          <div class="track" id="hueTrack" style="background:linear-gradient(90deg,#ff3b30 0%,#ff9500 12%,#ffd60a 24%,#34c759 42%,#00c7be 53%,#0a84ff 66%,#5e5ce6 78%,#bf5af2 88%,#ff2d55 100%);">
+            <div class="thumb" id="hueThumb" style="border:3px solid #fff;transition:background-color .15s ease;"></div>
+          </div>
+        </div>
+
+        <div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+            <span class="label">亮度</span>
+            <span class="mono" id="brightText" style="font-size:12px;color:#c4c4cc;">0%</span>
+          </div>
+          <div class="track" id="brightTrack" style="transition:background .5s ease;">
+            <div class="thumb" id="brightThumb" style="background:#fff;box-shadow:0 2px 9px rgba(0,0,0,0.45);"></div>
+          </div>
+        </div>
+
+        <button class="powerbtn" id="powerBtn">
+          <span style="font-size:18px;line-height:1;">⏻</span>
+          <span id="powerLabel">關燈</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+<script>
+// ---------- 狀態 ----------
+const PALETTE = [
+  ['紅','#FF3B30'],['橘','#FF9500'],['黃','#FFD60A'],['綠','#34C759'],['青','#00C7BE'],
+  ['藍','#0A84FF'],['靛','#5E5CE6'],['紫','#BF5AF2'],['粉','#FF2D55'],['白','#FFFFFF'],
+];
+let state = { base:{r:10,g:132,b:255}, brightness:90, isOff:false, custom:false,
+              activeName:'藍', connected:false, deviceCount:0 };
+
+// ---------- 顏色工具 ----------
+const hexToRgb = h=>{h=h.replace('#','');return{r:parseInt(h.slice(0,2),16),g:parseInt(h.slice(2,4),16),b:parseInt(h.slice(4,6),16)};};
+const toHex = o=>{const f=n=>Math.max(0,Math.min(255,Math.round(n))).toString(16).padStart(2,'0');return('#'+f(o.r)+f(o.g)+f(o.b)).toUpperCase();};
+const scale = (o,f)=>({r:o.r*f,g:o.g*f,b:o.b*f});
+const rgbStr = o=>`rgb(${Math.round(o.r)}, ${Math.round(o.g)}, ${Math.round(o.b)})`;
+const rgba = (o,a)=>`rgba(${Math.round(o.r)}, ${Math.round(o.g)}, ${Math.round(o.b)}, ${a})`;
+function hueOf(o){const r=o.r/255,g=o.g/255,b=o.b/255;const mx=Math.max(r,g,b),mn=Math.min(r,g,b),d=mx-mn;let h=0;if(d){if(mx===r)h=((g-b)/d)%6;else if(mx===g)h=(b-r)/d+2;else h=(r-g)/d+4;h*=60;if(h<0)h+=360;}return h;}
+function hslToRgb(h,s,l){s/=100;l/=100;const c=(1-Math.abs(2*l-1))*s,x=c*(1-Math.abs((h/60)%2-1)),m=l-c/2;let r=0,g=0,b=0;if(h<60){r=c;g=x;}else if(h<120){r=x;g=c;}else if(h<180){g=c;b=x;}else if(h<240){g=x;b=c;}else if(h<300){r=x;b=c;}else{r=c;b=x;}return{r:(r+m)*255,g:(g+m)*255,b:(b+m)*255};}
+
+// ---------- Python 橋接 ----------
+function py(method,...args){
+  if(window.pywebview && window.pywebview.api && window.pywebview.api[method]){
+    try{ return Promise.resolve(window.pywebview.api[method](...args)); }
+    catch(e){ return Promise.resolve(null); }
+  }
+  return Promise.resolve(null); // 純瀏覽器預覽模式：只動畫，不控燈
+}
+window.addEventListener('pywebviewready', syncFromBackend);
+function syncFromBackend(){
+  py('get_state').then(st=>{
+    if(!st) return;
+    state.base = {r:st.r,g:st.g,b:st.b};
+    state.brightness = st.brightness;
+    state.isOff = st.is_off;
+    state.connected = st.connected;
+    state.deviceCount = st.device_count;
+    state.custom = !PALETTE.some(([n,h])=>{const c=hexToRgb(h);return c.r===st.r&&c.g===st.g&&c.b===st.b;});
+    state.activeName = (PALETTE.find(([n,h])=>{const c=hexToRgb(h);return c.r===st.r&&c.g===st.g&&c.b===st.b;})||[null])[0];
+    render();
+  });
+}
+// 給 Python 背景執行緒推送連線狀態用
+window.lumenSetStatus = function(st){
+  if(!st) return;
+  state.connected = st.connected;
+  state.deviceCount = st.device_count;
+  renderStatus();
+};
+
+// ---------- 建立色票 ----------
+const paletteEl = document.getElementById('palette');
+PALETTE.forEach(([name,hex])=>{
+  const b=document.createElement('button');
+  b.className='swatch'; b.style.background=hex; b.dataset.name=name;
+  b.innerHTML='<div class="ring"></div>';
+  b.addEventListener('mouseenter',()=>{b.style.boxShadow='0 0 28px '+hex;});
+  b.addEventListener('mouseleave',()=>{b.style.boxShadow='0 4px 14px rgba(0,0,0,0.3)';});
+  b.addEventListener('click',()=>chooseColor(name,hex));
+  paletteEl.appendChild(b);
+});
+
+// ---------- 互動 ----------
+function chooseColor(name,hex){
+  state.base=hexToRgb(hex); state.isOff=false; state.custom=false; state.activeName=name;
+  render(); py('set_color',state.base.r,state.base.g,state.base.b);
+}
+function setHue(h){
+  state.base=hslToRgb(h,100,50); state.isOff=false; state.custom=true; state.activeName=null;
+  render(); py('set_color',Math.round(state.base.r),Math.round(state.base.g),Math.round(state.base.b));
+}
+function setBrightness(v){
+  state.brightness=Math.max(0,Math.min(100,Math.round(v))); state.isOff=false;
+  render(); py('set_brightness',state.brightness);
+}
+function togglePower(){
+  state.isOff=!state.isOff; render(); py('set_power', !state.isOff);
+}
+document.getElementById('powerBtn').addEventListener('click',togglePower);
+document.getElementById('btnMin').addEventListener('click',()=>py('minimize'));
+document.getElementById('btnMax').addEventListener('click',()=>py('toggle_max'));
+document.getElementById('btnClose').addEventListener('click',()=>py('close'));
+
+// 滑桿拖曳
+function attachDrag(trackId, kind){
+  const track=document.getElementById(trackId);
+  function move(e){
+    const r=track.getBoundingClientRect();
+    let t=(e.clientX-r.left)/r.width; t=Math.max(0,Math.min(1,t));
+    if(kind==='hue') setHue(t*360); else setBrightness(t*100);
+  }
+  track.addEventListener('pointerdown',e=>{
+    e.preventDefault(); move(e);
+    const up=()=>{window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',up);};
+    window.addEventListener('pointermove',move); window.addEventListener('pointerup',up);
+  });
+}
+attachDrag('hueTrack','hue');
+attachDrag('brightTrack','bright');
+
+// ---------- 繪製 ----------
+function renderStatus(){
+  const on=!state.isOff;
+  const col = on ? (state.connected ? '#34C759' : '#FFD60A') : '#7a7a82';
+  document.getElementById('statusDot').style.background=col;
+  document.getElementById('statusDot').style.boxShadow='0 0 10px '+col;
+  let txt;
+  if(!on) txt='待命中 · 燈光已關';
+  else if(state.connected) txt='已連線 · '+state.deviceCount+' 裝置';
+  else txt='等待 OpenRGB…';
+  document.getElementById('statusText').textContent=txt;
+}
+function render(){
+  const s=state;
+  const factor = s.isOff ? 0 : s.brightness/100;
+  const base=s.base, disp=scale(base,factor), H=hueOf(base);
+
+  const amb = rgba(base, 0.42*Math.max(factor,0.16));
+  document.getElementById('ambient1').style.background=amb;
+  document.getElementById('ambient2').style.background=amb;
+  document.getElementById('glowDisc').style.background=rgba(base,0.62*factor);
+
+  const orb=document.getElementById('orb');
+  orb.style.background=toHex(disp);
+  orb.style.boxShadow=`0 0 52px 6px ${rgba(base,0.5*factor)}, 0 0 112px 26px ${rgba(base,0.3*factor)}, inset 0 -16px 34px rgba(0,0,0,0.5)`;
+
+  const dot=rgbStr(base), glow='0 0 14px '+dot;
+  ['brandDot','ringDot','chipDot1','chipDot2'].forEach(id=>{
+    const el=document.getElementById(id); el.style.background=dot; el.style.boxShadow=glow;
+  });
+  document.getElementById('brandDot').style.boxShadow='0 0 16px '+dot;
+  const chipGlow='inset 0 0 20px '+rgba(base,0.22*Math.max(factor,0.2));
+  document.getElementById('chip1').style.boxShadow=chipGlow;
+  document.getElementById('chip2').style.boxShadow=chipGlow;
+
+  document.getElementById('hexText').textContent=toHex(base);
+  document.getElementById('rgbText').textContent=`R ${Math.round(base.r)}   G ${Math.round(base.g)}   B ${Math.round(base.b)}`;
+
+  document.getElementById('brightText').textContent=s.brightness+'%';
+  document.getElementById('brightTrack').style.background=`linear-gradient(90deg, rgba(255,255,255,0.06) 0%, ${rgbStr(base)} 100%)`;
+  document.getElementById('brightThumb').style.left=s.brightness+'%';
+
+  const hueCol=toHex(hslToRgb(H,100,50));
+  const ht=document.getElementById('hueThumb');
+  ht.style.left=(H/360*100)+'%'; ht.style.background=hueCol;
+  ht.style.boxShadow='0 2px 9px rgba(0,0,0,0.45), 0 0 16px '+hueCol;
+
+  document.querySelectorAll('.swatch').forEach(b=>{
+    b.classList.toggle('sel', !s.custom && b.dataset.name===s.activeName);
+  });
+
+  const pb=document.getElementById('powerBtn');
+  document.getElementById('powerLabel').textContent=s.isOff?'開燈':'關燈';
+  pb.style.background=s.isOff?rgba(base,0.14):'rgba(255,255,255,0.04)';
+  pb.style.border='1px solid '+(s.isOff?rgba(base,0.5):'rgba(255,255,255,0.1)');
+  pb.style.boxShadow=s.isOff?('0 0 26px '+rgba(base,0.3)):'none';
+
+  renderStatus();
+}
+render();
+</script>
+</body>
+</html>
