@@ -149,6 +149,44 @@ class Api:
         except Exception:
             pass
 
+    def resize_edge(self, corner, dx, dy):
+        """給四個角落的縮放把手呼叫。corner 是 nw/ne/sw/se，dx/dy 是這次滑鼠位移。"""
+        try:
+            import ctypes
+            from ctypes import wintypes
+            hwnd = ctypes.windll.user32.FindWindowW(None, "LUMEN · RGB 燈控")
+            if not hwnd:
+                return
+            rect = wintypes.RECT()
+            ctypes.windll.user32.GetWindowRect(hwnd, ctypes.byref(rect))
+            left, top, right, bottom = rect.left, rect.top, rect.right, rect.bottom
+            dx, dy = int(dx), int(dy)
+            MIN_W, MIN_H = 860, 640
+            if "e" in corner:
+                right += dx
+            if "w" in corner:
+                left += dx
+            if "s" in corner:
+                bottom += dy
+            if "n" in corner:
+                top += dy
+            # 限制最小尺寸
+            if right - left < MIN_W:
+                if "w" in corner:
+                    left = right - MIN_W
+                else:
+                    right = left + MIN_W
+            if bottom - top < MIN_H:
+                if "n" in corner:
+                    top = bottom - MIN_H
+                else:
+                    bottom = top + MIN_H
+            ctypes.windll.user32.MoveWindow(
+                hwnd, left, top, right - left, bottom - top, True
+            )
+        except Exception:
+            pass
+
 
 def health_loop(api):
     """每 2 秒：沒連上就重連，連上就把上次顏色套回去；並把連線狀態推給介面。"""
@@ -175,7 +213,8 @@ def main():
         js_api=api,
         width=964,
         height=720,
-        resizable=False,
+        min_size=(860, 640),       # 最小尺寸，避免縮太小擠壞版面
+        resizable=True,            # 允許調整視窗大小
         frameless=True,            # 無邊框 → 用 HTML 內的 Windows 視窗鈕
         easy_drag=False,           # 拖曳只限 .pywebview-drag-region
         background_color="#040406",
