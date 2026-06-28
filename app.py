@@ -71,6 +71,17 @@ class Api:
                 if len(zone.leds) != size:
                     zone.resize(size)
 
+    def _ensure_direct(self, device):
+        """確保裝置在 Direct 模式，否則主機板會跑自己的內建燈效、忽略我們送的顏色。"""
+        try:
+            for i, m in enumerate(device.modes):
+                if m.name.lower() == "direct":
+                    if device.active_mode != i:
+                        device.set_mode(i)
+                    break
+        except Exception:
+            pass
+
     def _apply(self):
         """把（目前顏色 × 亮度）送到燈上。"""
         if self.client is None and not self._connect():
@@ -79,6 +90,7 @@ class Api:
             r, g, b = self._current_rgb()
             color = RGBColor(r, g, b)
             for device in self.client.devices:
+                self._ensure_direct(device)
                 self._ensure_zone_sizes(device)
                 device.set_color(color)
             return True

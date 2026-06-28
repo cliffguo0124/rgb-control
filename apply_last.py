@@ -56,6 +56,14 @@ def main():
 
     color = RGBColor(r, g, b)
     for device in client.devices:
+        # 先強制切到 Direct 模式，否則主機板會跑內建燈效、忽略我們的顏色
+        try:
+            for i, m in enumerate(device.modes):
+                if m.name.lower() == "direct" and device.active_mode != i:
+                    device.set_mode(i)
+                    break
+        except Exception:
+            pass
         for zone_index, size in ZONE_SIZES.items():
             if zone_index < len(device.zones) and len(device.zones[zone_index].leds) != size:
                 device.zones[zone_index].resize(size)
